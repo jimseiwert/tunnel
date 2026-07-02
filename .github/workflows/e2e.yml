@@ -57,6 +57,10 @@ jobs:
         working-directory: apps/dashboard
         run: bunx playwright install chromium --with-deps
 
+      - name: Run database migrations
+        working-directory: apps/dashboard
+        run: bunx better-auth migrate
+
       - name: Build Next.js app
         working-directory: apps/dashboard
         run: bun run build

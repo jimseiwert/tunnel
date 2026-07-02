@@ -6,7 +6,7 @@
   "publisher": "jimseiwert",
   "icon": "media/icon.png",
   "galleryBanner": { "color": "#0F172A", "theme": "dark" },
-  "engines": { "vscode": "^1.85.0" },
+  "engines": { "vscode": "^1.116.0" },
   "categories": ["Debuggers", "Other"],
   "activationEvents": ["onStartupFinished"],
   "main": "./dist/extension.js",
