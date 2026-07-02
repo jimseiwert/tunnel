@@ -59,7 +59,7 @@ jobs:
 
       - name: Run database migrations
         working-directory: apps/dashboard
-        run: bunx better-auth migrate
+        run: bun scripts/migrate.ts
 
       - name: Build Next.js app
         working-directory: apps/dashboard
