@@ -18,7 +18,7 @@
     "@types/react": "^19.2.14",
     "jsondiffpatch": "^0.7.3",
     "jsonwebtoken": "^9.0.3",
-    "ws": "^8.20.0",
+    "ws": "^8.21.0",
     "dotenv": "^17.4.2",
     "dotenv-expand": "^13.0.0",
     "@conduit/types": "*"
@@ -28,7 +28,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "ink-testing-library": "^4.0.0",
-    "react-devtools-core": "^7.0.1",
     "typescript": "^6.0.3"
   }
 }

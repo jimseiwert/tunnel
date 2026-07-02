@@ -80,15 +80,15 @@
     "package": "bunx vsce package --no-dependencies"
   },
   "dependencies": {
-    "ws": "^8.20.0",
+    "ws": "^8.21.0",
     "@conduit/types": "*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/vscode": "^1.116.0",
     "@types/ws": "^8.18.1",
-    "@vscode/vsce": "^3.9.1",
-    "esbuild": "^0.28.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
     "typescript": "^6.0.3"
   }
 }
