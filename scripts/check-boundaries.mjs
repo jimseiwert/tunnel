@@ -44,8 +44,9 @@ function walk(dir) {
 // Captures the module specifier from:
 //   import ... from '<spec>'   /   export ... from '<spec>'
 //   require('<spec>')          /   import('<spec>')
+//   import '<spec>'            (bare side-effect import)
 const specRe =
-  /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\)|import\(\s*['"]([^'"]+)['"]\s*\)/g
+  /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\)|import\(\s*['"]([^'"]+)['"]\s*\)|import\s+['"]([^'"]+)['"]/g
 
 function hitsCloud(spec, fileDir) {
   // Bare workspace specifier for the cloud package.
@@ -67,7 +68,7 @@ for (const root of coreRoots) {
     specRe.lastIndex = 0
     let m
     while ((m = specRe.exec(src)) !== null) {
-      const spec = m[1] || m[2] || m[3]
+      const spec = m[1] || m[2] || m[3] || m[4]
       if (spec && hitsCloud(spec, dirname(file))) {
         const line = src.slice(0, m.index).split('\n').length
         violations.push(`${relative(repoRoot, file)}:${line} imports '${spec}'`)
