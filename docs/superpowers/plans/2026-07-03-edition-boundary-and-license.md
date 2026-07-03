@@ -489,92 +489,162 @@ git commit -m "chore: add packages/cloud submodule seam and docs"
 
 ---
 
-### Task 6: Import-boundary lint (dependency-cruiser) + CI job
+### Task 6: Import-boundary check (zero-dep) + CI job
 
 **Files:**
-- Modify: `package.json` (root — add devDep + `lint:boundaries` script)
-- Create: `.dependency-cruiser.cjs`
+- Create: `scripts/check-boundaries.mjs`
+- Modify: `package.json` (root — add `lint:boundaries` script; NO new dependency)
+- Modify: `docs/CLOUD_SUBMODULE.md` (update the boundary-rule paragraph to reference this script instead of dependency-cruiser)
 - Modify: `.github/workflows/ci.yml` (add `boundaries` job)
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `bun run lint:boundaries` command that fails when a core package imports from `packages/cloud`.
+- Produces: `bun run lint:boundaries` (runs `node scripts/check-boundaries.mjs`) that exits non-zero when any core package source imports from `packages/cloud`.
 
-- [ ] **Step 1: Add dependency-cruiser and the script**
+**Design note:** The approved plan originally used `dependency-cruiser`; it was replaced with a zero-dependency Node script because (a) the build environment blocks the npm registry so the dep cannot be installed/verified, and (b) a full graph-analysis dependency is over-engineered for a single import rule. The script uses only Node built-ins.
 
-In root `package.json`, add to `devDependencies`:
+- [ ] **Step 1: Create the boundary-check script**
 
-```json
-    "dependency-cruiser": "^17.0.1",
-    "typescript": "^6.0.3"
-```
-
-(Keep the existing `typescript` entry — do not duplicate; only add `dependency-cruiser` if `typescript` is already present.)
-
-Add to root `scripts`:
-
-```json
-    "lint:boundaries": "depcruise packages apps --config .dependency-cruiser.cjs"
-```
-
-- [ ] **Step 2: Create the boundary rule config**
-
-Create `.dependency-cruiser.cjs`:
+Create `scripts/check-boundaries.mjs`:
 
 ```js
-/** @type {import('dependency-cruiser').IConfiguration} */
-module.exports = {
-  forbidden: [
-    {
-      name: 'no-core-to-cloud',
-      comment:
-        'Community/core packages must not import from packages/cloud. The cloud edition is private and must not leak into the community build.',
-      severity: 'error',
-      from: {
-        path: '^(packages/(relay|cli|vscode-ext|types)|apps/dashboard)',
-      },
-      to: {
-        path: '^packages/cloud',
-      },
-    },
-  ],
-  options: {
-    doNotFollow: { path: 'node_modules' },
-    tsConfig: { fileName: 'tsconfig.base.json' },
-    enhancedResolveOptions: { exportsFields: ['exports'], conditionNames: ['import', 'require'] },
-  },
+#\!/usr/bin/env node
+// Zero-dependency import-boundary check.
+// Core packages must NOT import from packages/cloud (the private cloud edition).
+// Exits 1 and lists offenders on violation; exits 0 when clean.
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, resolve, relative, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const cloudDir = join(repoRoot, 'packages', 'cloud')
+
+// Source roots whose code must never reach into packages/cloud.
+const coreRoots = [
+  'packages/relay/src',
+  'packages/cli/src',
+  'packages/vscode-ext/src',
+  'packages/types/src',
+  'apps/dashboard/src',
+]
+
+const exts = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
+
+function walk(dir) {
+  let out = []
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return out
+  }
+  for (const e of entries) {
+    const full = join(dir, e.name)
+    if (e.isDirectory()) {
+      if (e.name === 'node_modules' || e.name === 'dist') continue
+      out = out.concat(walk(full))
+    } else {
+      const dot = e.name.lastIndexOf('.')
+      if (dot \!== -1 && exts.has(e.name.slice(dot))) out.push(full)
+    }
+  }
+  return out
 }
+
+// Captures the module specifier from:
+//   import ... from '<spec>'   /   export ... from '<spec>'
+//   require('<spec>')          /   import('<spec>')
+const specRe =
+  /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\)|import\(\s*['"]([^'"]+)['"]\s*\)/g
+
+function hitsCloud(spec, fileDir) {
+  // Bare workspace specifier for the cloud package.
+  if (spec === '@conduit/cloud' || spec.startsWith('@conduit/cloud/')) return true
+  // Relative specifier that resolves into packages/cloud.
+  if (spec.startsWith('.')) {
+    const rel = relative(cloudDir, resolve(fileDir, spec))
+    if (rel === '' || \!rel.startsWith('..')) return true
+  }
+  // Any explicit mention of the path.
+  if (spec.includes('packages/cloud')) return true
+  return false
+}
+
+const violations = []
+for (const root of coreRoots) {
+  for (const file of walk(join(repoRoot, root))) {
+    const src = readFileSync(file, 'utf8')
+    specRe.lastIndex = 0
+    let m
+    while ((m = specRe.exec(src)) \!== null) {
+      const spec = m[1] || m[2] || m[3]
+      if (spec && hitsCloud(spec, dirname(file))) {
+        const line = src.slice(0, m.index).split('\n').length
+        violations.push(`${relative(repoRoot, file)}:${line} imports '${spec}'`)
+      }
+    }
+  }
+}
+
+if (violations.length > 0) {
+  console.error('Import boundary violation: core packages must not import from packages/cloud')
+  for (const v of violations) console.error('  ' + v)
+  process.exit(1)
+}
+console.log('Import boundary OK: no core -> packages/cloud imports')
 ```
 
-- [ ] **Step 3: Install**
+- [ ] **Step 2: Add the root script**
 
-Run: `bun install`
-Expected: exits 0; `bunx depcruise --version` prints a 17.x version.
+In root `package.json`, add to `scripts`:
+
+```json
+    "lint:boundaries": "node scripts/check-boundaries.mjs"
+```
+
+(No dependency changes. Do NOT add dependency-cruiser.)
+
+- [ ] **Step 3: Run it clean**
+
+Run: `bun run lint:boundaries`
+Expected: prints `Import boundary OK: no core -> packages/cloud imports`, exit 0.
 
 - [ ] **Step 4: Prove the rule catches a violation (temporary)**
 
 Create a temporary offending file `packages/relay/src/__boundary_probe.ts`:
 
 ```ts
-// TEMPORARY — used only to verify the boundary lint fires.
+// TEMPORARY — used only to verify the boundary check fires.
 export { EDITION } from '../../cloud/index.js'
 ```
 
 Run: `bun run lint:boundaries`
-Expected: FAIL — reports `error no-core-to-cloud` on `packages/relay/src/__boundary_probe.ts`.
+Expected: FAIL (exit 1); stderr lists `packages/relay/src/__boundary_probe.ts:2 imports '../../cloud/index.js'`.
 
-- [ ] **Step 5: Remove the probe and confirm the lint passes clean**
+- [ ] **Step 5: Remove the probe and confirm clean again**
 
 Run: `rm packages/relay/src/__boundary_probe.ts && bun run lint:boundaries`
-Expected: exits 0 — no violations.
+Expected: exit 0, prints the OK line.
 
-- [ ] **Step 6: Add the CI job**
+- [ ] **Step 6: Update the cloud submodule doc's boundary paragraph**
+
+In `docs/CLOUD_SUBMODULE.md`, replace the boundary-rule paragraph so it references this script. The section should read:
+
+```markdown
+## Boundary rule
+
+Core packages must never import from `packages/cloud`. CI enforces this via a
+zero-dependency check (`scripts/check-boundaries.mjs`, run with
+`bun run lint:boundaries`). `cloud` may import from core packages.
+```
+
+- [ ] **Step 7: Add the CI job**
 
 In `.github/workflows/ci.yml`, add this job under `jobs:` (sibling of `test-units`):
 
 ```yaml
   boundaries:
-    name: Import boundary lint
+    name: Import boundary check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -583,21 +653,18 @@ In `.github/workflows/ci.yml`, add this job under `jobs:` (sibling of `test-unit
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
-
       - name: Check edition import boundary
         run: bun run lint:boundaries
 ```
 
-- [ ] **Step 7: Commit**
+(No `bun install` needed for this job — the script uses only Node/Bun built-ins.)
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add package.json .dependency-cruiser.cjs .github/workflows/ci.yml bun.lock
-git commit -m "ci: enforce community->cloud import boundary"
+git add scripts/check-boundaries.mjs package.json docs/CLOUD_SUBMODULE.md .github/workflows/ci.yml
+git commit -m "ci: enforce community->cloud import boundary (zero-dep check)"
 ```
-
----
 
 ### Task 7: CI job — community build with cloud absent
 
