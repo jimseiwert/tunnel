@@ -26,6 +26,6 @@ community build ignores it. `EDITION` is unset, so it resolves to `community`.
 
 ## Boundary rule
 
-Core packages must never import from `packages/cloud`. CI enforces this via
-`dependency-cruiser` (see `.dependency-cruiser.cjs`). `cloud` may import from
-core packages.
+Core packages must never import from `packages/cloud`. CI enforces this via a
+zero-dependency check (`scripts/check-boundaries.mjs`, run with
+`bun run lint:boundaries`). `cloud` may import from core packages.

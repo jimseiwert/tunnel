@@ -13,7 +13,8 @@
     "build:cli": "cd packages/cli && bun run build",
     "build:vscode-ext": "cd packages/vscode-ext && bun run build",
     "test": "bun test --timeout 10000 packages/relay/src packages/cli/src",
-    "dev:relay": "cd packages/relay && bun run dev"
+    "dev:relay": "cd packages/relay && bun run dev",
+    "lint:boundaries": "node scripts/check-boundaries.mjs"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

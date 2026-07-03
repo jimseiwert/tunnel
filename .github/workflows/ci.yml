@@ -31,6 +31,19 @@ jobs:
       - name: CLI tests
         run: cd packages/cli && bun test --timeout 10000
 
+  boundaries:
+    name: Import boundary check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check edition import boundary
+        run: bun run lint:boundaries
+
   build-cli:
     name: Build CLI (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
