@@ -1,8 +1,6 @@
 import { ConduitClient } from '../ws/client.js'
-import { loadProjectConfig } from '../config.js'
+import { loadProjectConfig, DEFAULT_RELAY_WS_URL } from '../config.js'
 import type { RequestRecords, RequestRecord } from '@conduit/types'
-
-const DEFAULT_RELAY = 'wss://relay.conduitrelay.com'
 
 function formatAge(ts: number): string {
   const ageMs = Date.now() - ts
@@ -48,7 +46,7 @@ function printTable(records: RequestRecord[]): void {
 }
 
 export async function cmdHistory(args: { limit?: number; relay?: string }) {
-  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY
+  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_WS_URL
   const limit = args.limit ?? 50
   const cwd = process.cwd()
 

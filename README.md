@@ -59,10 +59,9 @@ irm https://get.conduitrelay.com/conduit/install.ps1 | iex
 
 ### CLI
 
-```bash
-# Register a slug and start forwarding to localhost:3000
-conduit start --port 3000
-```
+1. **Log in** (hosted relay only): `conduit login`. Self-hosting your own relay? Skip this and set `CONDUIT_RELAY_URL` instead (see Self-Hosting).
+
+2. **Start the tunnel**: `conduit start --port 3000` registers a slug and starts forwarding to localhost:3000.
 
 Your public URL appears in the TUI header. Send a request to it — it shows up immediately.
 
@@ -86,7 +85,8 @@ On your next run, conduit reads your workspace config from `~/.conduit/projects.
 
 ```
 conduit start               Start the tunnel and open the TUI dashboard
-conduit auth                Authenticate with the relay server
+conduit login               Log in to the hosted relay (opens browser)
+conduit logout              Log out and clear stored credentials
 conduit diff <id1> <id2>    Field-level diff between two requests in the ring buffer
 conduit history             List recent requests (default: last 50)
 conduit replay <id>         Replay a stored request
@@ -97,6 +97,8 @@ Options (start):
   --http                    Accept HTTP in addition to HTTPS
   --relay <url>             Custom relay WebSocket URL
 ```
+
+> `conduit auth` is a deprecated alias for `conduit login` and still works.
 
 ## Config
 
@@ -115,6 +117,29 @@ export CONDUIT_HOME=/path/to/config
 ```
 
 **Sharing a tunnel with your team:** share the slug and token from `~/.conduit/projects.json`. Teammates connect as watchers with `conduit start --relay wss://relay.conduitrelay.com` or via the VS Code extension in watch mode.
+
+## Troubleshooting
+
+**"Not logged in" when running `conduit start`.** The hosted relay requires a login.
+Run `conduit login`. If you self-host, set `CONDUIT_RELAY_URL=wss://relay.yourdomain.com`
+(no login required when `RELAY_AUTH_REQUIRED=false` or a registration token is configured).
+
+**"Cannot reach the relay at …".** The relay URL is unreachable. Confirm the relay is
+running, the URL/scheme is correct (`wss://` for TLS), and that `CONDUIT_RELAY_URL` points
+at your deployment. Network proxies and firewalls can block WebSocket upgrades.
+
+**Requests return 502 / "cannot reach your local server".** Your local app isn't
+listening on the forwarded port. Start it, or pass the right port: `conduit start --port <port>`.
+
+**Requests return 504.** Your local server accepted the connection but didn't respond in
+time. Check for a hung handler; the relay's forward timeout is `FORWARD_TIMEOUT_MS`.
+
+**Invalid or expired token.** Slug tokens expire and are invalidated if the relay's
+`CONDUIT_JWT_SECRET` is rotated. Run `conduit token refresh`; if that fails, re-run
+`conduit login` (hosted) or re-register against your self-hosted relay.
+
+**Reset a workspace's slug.** Delete the workspace entry from `~/.conduit/projects.json`
+(keyed by workspace path). The next `conduit start` generates a fresh slug.
 
 ## Self-Hosting
 

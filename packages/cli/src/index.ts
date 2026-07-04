@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { ConfigMismatchError } from './config.js'
+import { ConfigMismatchError, DEFAULT_RELAY_WS_URL, DEFAULT_DASHBOARD_URL } from './config.js'
 import { CLI_VERSION as VERSION } from './version.js'
+import { loadDotenv } from './env.js'
 
 function printHelp(): void {
   console.log(`
@@ -21,10 +22,10 @@ COMMANDS
 OPTIONS (start)
   --port <port>       Local port to forward to (default: 3000)
   --http              Enable HTTP (not just HTTPS) on the conduit
-  --relay <url>       Relay WebSocket URL (default: wss://relay.conduitrelay.com)
+  --relay <url>       Relay WebSocket URL (default: ${DEFAULT_RELAY_WS_URL})
 
 OPTIONS (login)
-  --dashboard <url>   Dashboard URL (default: https://app.conduitrelay.com)
+  --dashboard <url>   Dashboard URL (default: ${DEFAULT_DASHBOARD_URL})
 
 OPTIONS (diff / history / replay / token)
   --relay <url>       Relay WebSocket URL
@@ -82,6 +83,7 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
+  loadDotenv()
   const argv = process.argv.slice(2)
   const { command, positional, flags } = parseArgs(argv)
 

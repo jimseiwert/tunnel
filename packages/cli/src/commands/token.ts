@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken'
-import { loadProjectConfig, saveProjectConfig } from '../config.js'
+import { loadProjectConfig, saveProjectConfig, DEFAULT_RELAY_HTTP_URL } from '../config.js'
 
-const DEFAULT_RELAY = 'https://relay.conduitrelay.com'
 const RENEWAL_THRESHOLD_DAYS = 7
 
 export async function cmdTokenRefresh(args: { relay?: string }) {
-  const relayBase = (args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY)
+  const relayBase = (args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_HTTP_URL)
     .replace(/^wss?:\/\//, 'https://')
     .replace(/\/$/, '')
 

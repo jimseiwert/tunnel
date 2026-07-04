@@ -259,10 +259,19 @@ jobs:
         with:
           path: dist/
 
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist
+          find . -type f ! -name 'SHA256SUMS' -exec sha256sum {} \; \
+            | sed -E 's#^([0-9a-fA-F]+)[[:space:]]+.*/#\1  #' > SHA256SUMS
+          cat SHA256SUMS
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.resolve-version.outputs.version }}
-          files: dist/**/*
+          files: |
+            dist/**/*
+            dist/SHA256SUMS
           generate_release_notes: true
           draft: false

@@ -8,7 +8,7 @@
   "galleryBanner": { "color": "#0F172A", "theme": "dark" },
   "engines": { "vscode": "^1.116.0" },
   "categories": ["Debuggers", "Other"],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": ["onView:conduit.requests", "workspaceContains:**/.conduit"],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {

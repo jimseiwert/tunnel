@@ -1,13 +1,29 @@
 import React from 'react'
 import { render } from 'ink'
 import jwt from 'jsonwebtoken'
-import { loadProjectConfig, saveProjectConfig, generateSlug, loadCredentials } from '../config.js'
+import {
+  loadProjectConfig,
+  saveProjectConfig,
+  generateSlug,
+  loadCredentials,
+  DEFAULT_RELAY_WS_URL,
+  isDefaultRelayHost,
+} from '../config.js'
 import { ConduitClient } from '../ws/client.js'
 import { App } from '../ui/App.js'
 
 import { CLI_VERSION } from '../version.js'
 
-const DEFAULT_RELAY = 'wss://relay.conduitrelay.com'
+export function loginRequiredMessage(relayUrl: string): string {
+  return [
+    `Not logged in to ${relayUrl}.`,
+    '',
+    '  Run `conduit login` to authenticate with the hosted relay.',
+    '',
+    '  Self-hosting your own relay? Point the CLI at it and no login is needed:',
+    '    export CONDUIT_RELAY_URL=wss://relay.yourdomain.com',
+  ].join('\n')
+}
 
 export async function cmdStart(args: {
   port?: number
@@ -17,7 +33,7 @@ export async function cmdStart(args: {
   relay?: string
 }) {
   const cwd = process.cwd()
-  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY
+  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_WS_URL
 
   // Check if running in VS Code integrated terminal
   const inVscode = !!process.env['VSCODE_PID'] || process.env['TERM_PROGRAM'] === 'vscode'
@@ -42,7 +58,7 @@ export async function cmdStart(args: {
     if (args.relay) entry.relayUrl = args.relay
     // Migrate stale relay URLs from old domains
     if (entry.relayUrl && /debug\.tunnel\.digital|tunnel\.digital/.test(entry.relayUrl)) {
-      entry.relayUrl = DEFAULT_RELAY
+      entry.relayUrl = DEFAULT_RELAY_WS_URL
       saveProjectConfig(cwd, entry)
     }
   }
@@ -95,9 +111,9 @@ export async function cmdStart(args: {
 
   // For the hosted relay, require login. Self-hosted relays use registrationToken
   // or RELAY_AUTH_REQUIRED=false, so we only gate on the default production relay.
-  const isProductionRelay = effectiveRelay.includes('conduitrelay.com')
+  const isProductionRelay = isDefaultRelayHost(effectiveRelay)
   if (isProductionRelay && !userToken) {
-    console.error('Not logged in. Run `conduit login` to authenticate.')
+    console.error(loginRequiredMessage(effectiveRelay))
     process.exit(1)
   }
 

@@ -1,11 +1,9 @@
 import { ConduitClient } from '../ws/client.js'
-import { loadProjectConfig } from '../config.js'
+import { loadProjectConfig, DEFAULT_RELAY_WS_URL } from '../config.js'
 import type { RequestCompleted, RequestRecords } from '@conduit/types'
 
-const DEFAULT_RELAY = 'wss://relay.conduitrelay.com'
-
 export async function cmdReplay(id: string, args: { relay?: string }) {
-  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY
+  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_WS_URL
   const cwd = process.cwd()
 
   let slug = 'watcher'

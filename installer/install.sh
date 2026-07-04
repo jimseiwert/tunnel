@@ -34,15 +34,29 @@ if [ -z "$TAG" ]; then
 fi
 
 URL="https://github.com/${REPO}/releases/download/${TAG}/${BINARY}-${PLATFORM}"
+SUMS_URL="https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS"
 echo "Downloading ${BINARY} ${TAG} for ${PLATFORM}..."
 curl -fsSL -o "/tmp/${BINARY}" "$URL"
-chmod +x "/tmp/${BINARY}"
 
-# Verify binary runs
-if ! "/tmp/${BINARY}" --version >/dev/null 2>&1; then
-  echo "Downloaded binary failed to execute" >&2
+# Verify SHA256 against the published SHA256SUMS
+echo "Verifying checksum..."
+SUMS=$(curl -fsSL "$SUMS_URL" || true)
+EXPECTED=$(printf '%s\n' "$SUMS" | grep " ${BINARY}-${PLATFORM}$" | awk '{print $1}' || true)
+if [ -z "$EXPECTED" ]; then
+  echo "Could not find a checksum for ${BINARY}-${PLATFORM} in SHA256SUMS" >&2
   exit 1
 fi
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL=$(sha256sum "/tmp/${BINARY}" | awk '{print $1}')
+else
+  ACTUAL=$(shasum -a 256 "/tmp/${BINARY}" | awk '{print $1}')
+fi
+if [ "$EXPECTED" != "$ACTUAL" ]; then
+  echo "Checksum mismatch! expected ${EXPECTED}, got ${ACTUAL}" >&2
+  rm -f "/tmp/${BINARY}"
+  exit 1
+fi
+chmod +x "/tmp/${BINARY}"
 
 # Install
 if [ -w "$INSTALL_DIR" ]; then

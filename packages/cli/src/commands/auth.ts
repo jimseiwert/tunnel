@@ -2,8 +2,7 @@ import * as http from 'node:http'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as child_process from 'node:child_process'
-
-const DEFAULT_RELAY = 'https://relay.conduitrelay.com'
+import { DEFAULT_RELAY_HTTP_URL } from '../config.js'
 
 /**
  * Opens a URL in the system default browser.
@@ -107,7 +106,7 @@ function waitForCallbackToken(port: number): Promise<string> {
  * 4. Persist CONDUIT_USER_TOKEN to .env
  */
 export async function cmdAuth(args: { relay?: string }) {
-  const relayBase = (args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY)
+  const relayBase = (args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_HTTP_URL)
     .replace(/^wss?:\/\//, 'https://')
     .replace(/\/$/, '')
 
