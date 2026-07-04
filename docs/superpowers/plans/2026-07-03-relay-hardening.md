@@ -122,7 +122,7 @@ Create `packages/relay/src/__tests__/admin-auth.test.ts`:
 ```ts
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { createServer } from '../server.js'
-import { MemoryStorage } from '../storage/memory.js'
+import { MemoryStorageAdapter } from '../storage/memory.js'
 import type { RelayConfig } from '../config.js'
 
 function baseConfig(overrides: Partial<RelayConfig> = {}): RelayConfig {
@@ -147,7 +147,7 @@ function baseConfig(overrides: Partial<RelayConfig> = {}): RelayConfig {
 describe('admin auth', () => {
   let app: Awaited<ReturnType<typeof createServer>>
   beforeEach(async () => {
-    app = await createServer(baseConfig(), new MemoryStorage())
+    app = await createServer(baseConfig(), new MemoryStorageAdapter())
     await app.ready()
   })
   afterEach(async () => {
@@ -208,29 +208,29 @@ Create `packages/relay/src/__tests__/token-compare.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'bun:test'
-import { MemoryStorage } from '../storage/memory.js'
+import { MemoryStorageAdapter } from '../storage/memory.js'
 
 describe('slug token validation (memory)', () => {
   it('returns valid for the correct token', async () => {
-    const s = new MemoryStorage()
+    const s = new MemoryStorageAdapter()
     const future = Math.floor(Date.now() / 1000) + 3600
     await s.registerSlug('ws-abc', 'tok-correct', future)
     expect(await s.validateSlug('ws-abc', 'tok-correct')).toBe('valid')
   })
   it('returns invalid for a wrong token of the same length', async () => {
-    const s = new MemoryStorage()
+    const s = new MemoryStorageAdapter()
     const future = Math.floor(Date.now() / 1000) + 3600
     await s.registerSlug('ws-abc', 'tok-correct', future)
     expect(await s.validateSlug('ws-abc', 'tok-wrongxx')).toBe('invalid')
   })
   it('returns invalid for a wrong-length token', async () => {
-    const s = new MemoryStorage()
+    const s = new MemoryStorageAdapter()
     const future = Math.floor(Date.now() / 1000) + 3600
     await s.registerSlug('ws-abc', 'tok-correct', future)
     expect(await s.validateSlug('ws-abc', 'x')).toBe('invalid')
   })
   it('rejects renew with a wrong old token', async () => {
-    const s = new MemoryStorage()
+    const s = new MemoryStorageAdapter()
     const future = Math.floor(Date.now() / 1000) + 3600
     await s.registerSlug('ws-abc', 'tok-correct', future)
     expect(await s.renewSlug('ws-abc', 'tok-wrongxx', 'tok-new', future)).toBe(false)
@@ -884,7 +884,7 @@ Create `packages/relay/src/__tests__/rate-limit-route.test.ts`:
 ```ts
 import { describe, it, expect, afterEach } from 'bun:test'
 import { createServer } from '../server.js'
-import { MemoryStorage } from '../storage/memory.js'
+import { MemoryStorageAdapter } from '../storage/memory.js'
 import type { RelayConfig } from '../config.js'
 
 function cfg(overrides: Partial<RelayConfig> = {}): RelayConfig {
@@ -912,7 +912,7 @@ describe('HTTP rate limiting', () => {
   })
 
   it('returns 429 after the limit is exceeded', async () => {
-    app = await createServer(cfg({ rateLimitMax: 2 }), new MemoryStorage())
+    app = await createServer(cfg({ rateLimitMax: 2 }), new MemoryStorageAdapter())
     await app.ready()
     const hit = () => app.inject({ method: 'GET', url: '/nonexistent-path' })
     expect((await hit()).statusCode).not.toBe(429)
@@ -921,7 +921,7 @@ describe('HTTP rate limiting', () => {
   })
 
   it('does not rate limit the health check', async () => {
-    app = await createServer(cfg({ rateLimitMax: 1 }), new MemoryStorage())
+    app = await createServer(cfg({ rateLimitMax: 1 }), new MemoryStorageAdapter())
     await app.ready()
     await app.inject({ method: 'GET', url: '/healthz' })
     const res = await app.inject({ method: 'GET', url: '/healthz' })
