@@ -59,10 +59,9 @@ irm https://get.conduitrelay.com/conduit/install.ps1 | iex
 
 ### CLI
 
-```bash
-# Register a slug and start forwarding to localhost:3000
-conduit start --port 3000
-```
+1. **Log in** (hosted relay only): `conduit login`. Self-hosting your own relay? Skip this and set `CONDUIT_RELAY_URL` instead (see Self-Hosting).
+
+2. **Start the tunnel**: `conduit start --port 3000` registers a slug and starts forwarding to localhost:3000.
 
 Your public URL appears in the TUI header. Send a request to it — it shows up immediately.
 
@@ -86,7 +85,8 @@ On your next run, conduit reads your workspace config from `~/.conduit/projects.
 
 ```
 conduit start               Start the tunnel and open the TUI dashboard
-conduit auth                Authenticate with the relay server
+conduit login               Log in to the hosted relay (opens browser)
+conduit logout              Log out and clear stored credentials
 conduit diff <id1> <id2>    Field-level diff between two requests in the ring buffer
 conduit history             List recent requests (default: last 50)
 conduit replay <id>         Replay a stored request
@@ -97,6 +97,8 @@ Options (start):
   --http                    Accept HTTP in addition to HTTPS
   --relay <url>             Custom relay WebSocket URL
 ```
+
+> `conduit auth` is a deprecated alias for `conduit login` and still works.
 
 ## Config
 
