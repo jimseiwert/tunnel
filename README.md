@@ -118,6 +118,29 @@ export CONDUIT_HOME=/path/to/config
 
 **Sharing a tunnel with your team:** share the slug and token from `~/.conduit/projects.json`. Teammates connect as watchers with `conduit start --relay wss://relay.conduitrelay.com` or via the VS Code extension in watch mode.
 
+## Troubleshooting
+
+**"Not logged in" when running `conduit start`.** The hosted relay requires a login.
+Run `conduit login`. If you self-host, set `CONDUIT_RELAY_URL=wss://relay.yourdomain.com`
+(no login required when `RELAY_AUTH_REQUIRED=false` or a registration token is configured).
+
+**"Cannot reach the relay at …".** The relay URL is unreachable. Confirm the relay is
+running, the URL/scheme is correct (`wss://` for TLS), and that `CONDUIT_RELAY_URL` points
+at your deployment. Network proxies and firewalls can block WebSocket upgrades.
+
+**Requests return 502 / "cannot reach your local server".** Your local app isn't
+listening on the forwarded port. Start it, or pass the right port: `conduit start --port <port>`.
+
+**Requests return 504.** Your local server accepted the connection but didn't respond in
+time. Check for a hung handler; the relay's forward timeout is `FORWARD_TIMEOUT_MS`.
+
+**Invalid or expired token.** Slug tokens expire and are invalidated if the relay's
+`CONDUIT_JWT_SECRET` is rotated. Run `conduit token refresh`; if that fails, re-run
+`conduit login` (hosted) or re-register against your self-hosted relay.
+
+**Reset a workspace's slug.** Delete the workspace entry from `~/.conduit/projects.json`
+(keyed by workspace path). The next `conduit start` generates a fresh slug.
+
 ## Self-Hosting
 
 The relay is a Fastify WebSocket server. It proxies requests to the owner's CLI, persists a request ring buffer, and broadcasts live traffic to all connected watchers.
