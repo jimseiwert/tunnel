@@ -11,6 +11,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@conduit/types": "*",
     "@types/jsonwebtoken": "^9.0.10",
     "better-auth": "^1.6.23",
     "kysely": "^0.29.2",

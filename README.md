@@ -323,6 +323,29 @@ bun test             # Run the full test suite
 
 The wire protocol is defined in `packages/types/src/`. All messages are Zod-validated JSON over WebSocket. If you're adding a new message type, start there.
 
+## Editions & License
+
+Conduit ships in two editions from one codebase:
+
+- **Community** (this repo) — the relay, CLI, VS Code extension, and a
+  **single-organization** dashboard. Fully self-hostable for internal and
+  enterprise use. This is what you get by default.
+- **Cloud** — the multi-tenant hosted service (`relay.conduitrelay.com`),
+  including org isolation, billing, public signup, and the marketing site.
+  These SaaS-only components live in a private module and are not part of this
+  repository.
+
+The community edition is the default for every build. There is no code path
+from the community build into the cloud components.
+
+### License
+
+Conduit is licensed under the [Functional Source License, Version 1.1,
+Apache 2.0 Future License](LICENSE) (FSL-1.1-Apache-2.0). In short: you may use,
+modify, and self-host Conduit for any purpose **except** offering it to others
+as a competing hosted or managed service. Two years after each release, that
+release becomes available under the Apache License 2.0.
+
 ## Sponsoring
 
 Conduit is free and open source. Hosting the public relay, database, and CDN costs roughly **$30/month**.

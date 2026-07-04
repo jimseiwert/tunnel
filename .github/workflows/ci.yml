@@ -31,6 +31,19 @@ jobs:
       - name: CLI tests
         run: cd packages/cli && bun test --timeout 10000
 
+  boundaries:
+    name: Import boundary check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Check edition import boundary
+        run: bun run lint:boundaries
+
   build-cli:
     name: Build CLI (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -119,3 +132,30 @@ jobs:
 
       - name: Package Helm chart (no push)
         run: helm package apps/relay-chart --version 0.0.0
+
+  community-build:
+    name: Community build (cloud absent)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Assert cloud module is absent
+        run: |
+          if [ -e packages/cloud/index.ts ] || [ -e packages/cloud/package.json ]; then
+            echo "packages/cloud must not contain buildable code in the public checkout"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Community build
+        run: bun run build
+        env:
+          EDITION: ''

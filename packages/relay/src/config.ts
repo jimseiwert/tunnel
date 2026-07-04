@@ -1,4 +1,7 @@
+import { resolveEdition, type Edition } from '@conduit/types'
+
 export interface RelayConfig {
+  edition: Edition
   port: number
   jwtSecret: string
   authRequired: boolean
@@ -49,6 +52,7 @@ export function loadConfig(): RelayConfig {
   }
 
   return {
+    edition: resolveEdition(),
     port: parseInt(process.env['PORT'] ?? '3000', 10),
     jwtSecret,
     authRequired: process.env['RELAY_AUTH_REQUIRED'] !== 'false',
