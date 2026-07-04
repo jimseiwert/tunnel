@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { ConfigMismatchError } from './config.js'
 import { CLI_VERSION as VERSION } from './version.js'
+import { loadDotenv } from './env.js'
 
 function printHelp(): void {
   console.log(`
@@ -82,6 +83,7 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
+  loadDotenv()
   const argv = process.argv.slice(2)
   const { command, positional, flags } = parseArgs(argv)
 
