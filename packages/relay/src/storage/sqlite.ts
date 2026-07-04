@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import type { AdminSlugRecord, RequestRecord, StorageAdapter } from './interface.js'
+import { timingSafeEqualStr } from '../util/timing-safe.js'
 
 interface SqliteOptions {
   path: string
@@ -139,7 +140,7 @@ export class SqliteStorageAdapter implements StorageAdapter {
     )
     const row = stmt.get(slug)
     if (!row) return 'not_found'
-    if (row.token !== token) return 'invalid'
+    if (!timingSafeEqualStr(row.token, token)) return 'invalid'
     const nowSeconds = Math.floor(Date.now() / 1000)
     if (row.expires_at < nowSeconds) return 'expired'
     return 'valid'

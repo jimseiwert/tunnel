@@ -1,4 +1,5 @@
 import type { AdminSlugRecord, RequestRecord, StorageAdapter } from './interface.js'
+import { timingSafeEqualStr } from '../util/timing-safe.js'
 
 interface SlugEntry {
   token: string
@@ -54,7 +55,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
   async validateSlug(slug: string, token: string): Promise<'valid' | 'expired' | 'invalid' | 'not_found'> {
     const entry = this.slugs.get(slug)
     if (!entry) return 'not_found'
-    if (entry.token !== token) return 'invalid'
+    if (!timingSafeEqualStr(entry.token, token)) return 'invalid'
     const nowSeconds = Math.floor(Date.now() / 1000)
     if (entry.expiresAt < nowSeconds) return 'expired'
     return 'valid'
@@ -62,7 +63,7 @@ export class MemoryStorageAdapter implements StorageAdapter {
 
   async renewSlug(slug: string, oldToken: string, newToken: string, expiresAt: number): Promise<boolean> {
     const entry = this.slugs.get(slug)
-    if (!entry || entry.token !== oldToken) return false
+    if (!entry || !timingSafeEqualStr(entry.token, oldToken)) return false
     this.slugs.set(slug, { token: newToken, expiresAt })
     return true
   }

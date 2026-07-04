@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto'
 import pg from 'pg'
 import type { AdminSlugRecord, RequestRecord, StorageAdapter } from './interface.js'
+import { timingSafeEqualStr } from '../util/timing-safe.js'
 
 const { Pool } = pg
 
@@ -161,7 +162,7 @@ export class PostgresStorageAdapter implements StorageAdapter {
     )
     if (result.rows.length === 0) return 'not_found'
     const row = result.rows[0]!
-    if (row.token !== token) return 'invalid'
+    if (!timingSafeEqualStr(row.token, token)) return 'invalid'
     const nowSeconds = Math.floor(Date.now() / 1000)
     if (parseInt(row.expires_at, 10) < nowSeconds) return 'expired'
     return 'valid'
