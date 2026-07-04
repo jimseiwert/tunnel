@@ -43,6 +43,8 @@ function baseConfig(overrides: Partial<RelayConfig> = {}): RelayConfig {
     ringBufferSize: 1000,
     maxBodyBytes: 1048576,
     forwardTimeoutMs: 30000,
+    rateLimitMax: 0,
+    rateLimitWindowMs: 60000,
     storageAdapter: 'memory',
     relayDomain: 'localhost:3000',
     relayProto: 'http',

@@ -6,6 +6,8 @@ export interface RelayConfig {
   ringBufferSize: number
   maxBodyBytes: number
   forwardTimeoutMs: number
+  rateLimitMax: number
+  rateLimitWindowMs: number
   storageAdapter: 'memory' | 'sqlite' | 'postgres'
   sqlitePath?: string
   databaseUrl?: string
@@ -56,6 +58,8 @@ export function loadConfig(): RelayConfig {
     ringBufferSize: parseInt(process.env['RING_BUFFER_SIZE'] ?? '1000', 10),
     maxBodyBytes: parseInt(process.env['MAX_BODY_BYTES'] ?? '1048576', 10),
     forwardTimeoutMs: parseInt(process.env['FORWARD_TIMEOUT_MS'] ?? '30000', 10),
+    rateLimitMax: parseInt(process.env['RATE_LIMIT_MAX'] ?? '120', 10),
+    rateLimitWindowMs: parseInt(process.env['RATE_LIMIT_WINDOW_MS'] ?? '60000', 10),
     storageAdapter,
     sqlitePath: process.env['SQLITE_PATH'],
     databaseUrl: process.env['DATABASE_URL'],
