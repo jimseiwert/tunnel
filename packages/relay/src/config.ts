@@ -9,6 +9,8 @@ export interface RelayConfig {
   ringBufferSize: number
   maxBodyBytes: number
   forwardTimeoutMs: number
+  rateLimitMax: number
+  rateLimitWindowMs: number
   storageAdapter: 'memory' | 'sqlite' | 'postgres'
   sqlitePath?: string
   databaseUrl?: string
@@ -25,6 +27,19 @@ export interface RelayConfig {
   msalTenantId?: string
   msalClientId?: string
   msalClientSecret?: string
+}
+
+/**
+ * Parses an integer env var, falling back to `fallback` when unset or
+ * non-numeric. `min` clamps the low end (e.g. window must be >= 1ms). A
+ * non-numeric RATE_LIMIT_* must not silently disable the limiter, so we fall
+ * back rather than yield NaN.
+ */
+function parseIntEnv(raw: string | undefined, fallback: number, min: number): number {
+  if (raw === undefined) return fallback
+  const n = parseInt(raw, 10)
+  if (!Number.isFinite(n)) return fallback
+  return n < min ? min : n
 }
 
 export function loadConfig(): RelayConfig {
@@ -60,6 +75,11 @@ export function loadConfig(): RelayConfig {
     ringBufferSize: parseInt(process.env['RING_BUFFER_SIZE'] ?? '1000', 10),
     maxBodyBytes: parseInt(process.env['MAX_BODY_BYTES'] ?? '1048576', 10),
     forwardTimeoutMs: parseInt(process.env['FORWARD_TIMEOUT_MS'] ?? '30000', 10),
+    // min 0 for max: 0 explicitly disables the limiter; a non-numeric value
+    // falls back to 120 rather than disabling silently.
+    rateLimitMax: parseIntEnv(process.env['RATE_LIMIT_MAX'], 120, 0),
+    // min 1 for the window so the sweep interval is always positive.
+    rateLimitWindowMs: parseIntEnv(process.env['RATE_LIMIT_WINDOW_MS'], 60000, 1),
     storageAdapter,
     sqlitePath: process.env['SQLITE_PATH'],
     databaseUrl: process.env['DATABASE_URL'],

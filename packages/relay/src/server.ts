@@ -10,6 +10,7 @@ import { conduitRoutes } from './routes/conduit.js'
 import { renewRoutes } from './routes/renew.js'
 import { authRoutes } from './routes/auth.js'
 import { adminRoutes } from './routes/admin.js'
+import { FixedWindowRateLimiter } from './util/rate-limit.js'
 
 export { ConnectionRegistry } from './ws/registry.js'
 export { PendingRequests } from './ws/pending.js'
@@ -23,7 +24,31 @@ export async function createServer(
   await app.register(fastifyWebsocket)
 
   const registry = new ConnectionRegistry()
-  const pending = new PendingRequests()
+  const pending = new PendingRequests(config.maxBodyBytes)
+
+  // Per-IP rate limiting for HTTP routes. Disabled when rateLimitMax <= 0.
+  if (config.rateLimitMax > 0) {
+    const limiter = new FixedWindowRateLimiter(config.rateLimitMax, config.rateLimitWindowMs)
+    const sweepTimer = setInterval(() => limiter.sweep(), config.rateLimitWindowMs)
+    // Do not keep the process alive solely for the sweep timer.
+    if (typeof sweepTimer.unref === 'function') sweepTimer.unref()
+    app.addHook('onRequest', async (req, reply) => {
+      // Skip WebSocket upgrades and the health check.
+      if (req.headers.upgrade || req.url === '/healthz') return
+      if (!limiter.check(req.ip)) {
+        // Hijack + write via the raw response: some request paths (e.g. bare
+        // slugs that also match the WS `/:slug` route's schema) continue into
+        // route param validation after onRequest resolves, which throws
+        // ERR_HTTP_HEADERS_SENT under Bun's http shim if the reply was sent
+        // normally. Hijacking tells Fastify to stop managing the response.
+        reply.hijack()
+        reply.raw.statusCode = 429
+        reply.raw.setHeader('content-type', 'application/json; charset=utf-8')
+        reply.raw.end(JSON.stringify({ error: 'Too Many Requests' }))
+        return
+      }
+    })
+  }
 
   // Redirect /<slug> (no trailing slash, not a WS upgrade) → /<slug>/
   // Needed because the WS parametric route /:slug wins over the HTTP /:slug/*

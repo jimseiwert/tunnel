@@ -6,6 +6,8 @@ interface PendingEntry {
   timer: ReturnType<typeof setTimeout>
   /** Accumulated binary body chunks from streaming response frames. */
   chunks: Buffer[]
+  /** Running total of bytes accumulated in chunks, for the size cap. */
+  receivedBytes: number
   /** Stored ForwardResponse when body=null; resolved once END frame arrives. */
   pendingResponse: ForwardResponse | null
   /** Called when the END stream frame (0x01) is received. */
@@ -31,6 +33,13 @@ export class PendingRequests {
   private readonly bySlug = new Map<string, Set<string>>()
 
   /**
+   * @param maxBodyBytes Maximum total bytes of streamed response body to buffer
+   *   per request before rejecting. Guards against unbounded memory growth from
+   *   a runaway or malicious owner stream.
+   */
+  constructor(private readonly maxBodyBytes: number) {}
+
+  /**
    * Registers a pending request and returns a Promise that resolves when the
    * complete response (including any streaming body) is available.
    *
@@ -50,6 +59,7 @@ export class PendingRequests {
         reject,
         timer,
         chunks: [],
+        receivedBytes: 0,
         pendingResponse: null,
         streamEnded: false,
         slug,
@@ -113,6 +123,17 @@ export class PendingRequests {
   addChunk(requestId: string, chunk: Buffer): void {
     const entry = this.pending.get(requestId)
     if (!entry) return
+    entry.receivedBytes += chunk.length
+    if (entry.receivedBytes > this.maxBodyBytes) {
+      clearTimeout(entry.timer)
+      this.cleanup(requestId)
+      entry.reject(
+        new Error(
+          `Response body for ${requestId} exceeded max of ${this.maxBodyBytes} bytes`,
+        ),
+      )
+      return
+    }
     entry.chunks.push(chunk)
   }
 

@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import type { RelayConfig } from '../config.js'
 import type { StorageAdapter } from '../storage/interface.js'
+import { timingSafeEqualStr } from '../util/timing-safe.js'
 
 interface AdminRoutesOptions {
   config: RelayConfig
@@ -23,7 +24,8 @@ function requireAdmin(config: RelayConfig, req: FastifyRequest, reply: FastifyRe
     reply.code(503).send({ error: 'Admin API not configured' })
     return false
   }
-  if (req.headers['x-admin-secret'] !== config.adminSecret) {
+  const provided = req.headers['x-admin-secret']
+  if (typeof provided !== 'string' || !timingSafeEqualStr(provided, config.adminSecret)) {
     reply.code(401).send({ error: 'Unauthorized' })
     return false
   }

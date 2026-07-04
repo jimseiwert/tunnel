@@ -22,6 +22,7 @@ import type { StorageAdapter } from '../storage/interface.js'
 import { ConnectionRegistry } from './registry.js'
 import { PendingRequests } from './pending.js'
 import { issueSlugToken, tokenExpiresAt } from '../jwt.js'
+import { parseHeadersJson } from '../util/safe-json.js'
 import jwt from 'jsonwebtoken'
 
 interface OwnerWsOptions {
@@ -278,13 +279,13 @@ export async function ownerWsPlugin(
                     slug: r.slug,
                     method: r.method,
                     path: r.path,
-                    headers: JSON.parse(r.headersJson) as Record<string, string>,
+                    headers: parseHeadersJson(r.headersJson),
                     body: r.body,
                     bodyEncoding: r.bodyEncoding,
                     bodyTruncated: r.bodyTruncated,
                     status: r.status,
                     responseHeaders: r.responseHeadersJson
-                      ? (JSON.parse(r.responseHeadersJson) as Record<string, string>)
+                      ? parseHeadersJson(r.responseHeadersJson)
                       : undefined,
                     responseBody: r.responseBody,
                     responseBodyEncoding: r.responseBodyEncoding,
@@ -323,7 +324,7 @@ export async function ownerWsPlugin(
                   id: result.data.requestId,
                   method: record.method,
                   path: record.path,
-                  headers: JSON.parse(record.headersJson) as Record<string, string>,
+                  headers: parseHeadersJson(record.headersJson),
                   body: record.body,
                   bodyEncoding: record.bodyEncoding,
                   bodyTruncated: record.bodyTruncated,
