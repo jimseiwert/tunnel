@@ -3,6 +3,26 @@ import * as path from 'node:path'
 import * as os from 'node:os'
 import { randomBytes } from 'node:crypto'
 
+/** Default SaaS relay WebSocket URL (public product default; override via CONDUIT_RELAY_URL). */
+export const DEFAULT_RELAY_WS_URL = 'wss://relay.conduitrelay.com'
+/** Default SaaS relay HTTP base (for REST calls like renew). */
+export const DEFAULT_RELAY_HTTP_URL = 'https://relay.conduitrelay.com'
+/** Default SaaS dashboard URL used for login. */
+export const DEFAULT_DASHBOARD_URL = 'https://app.conduitrelay.com'
+
+/** Host portion of the default SaaS relay, e.g. "relay.conduitrelay.com". */
+const DEFAULT_RELAY_HOST = 'relay.conduitrelay.com'
+
+/** True when the given URL targets the default SaaS relay host (ws:// or https://). */
+export function isDefaultRelayHost(url: string): boolean {
+  if (!url) return false
+  try {
+    return new URL(url).host === DEFAULT_RELAY_HOST
+  } catch {
+    return false
+  }
+}
+
 export interface ProjectEntry {
   slug: string
   token: string | null
@@ -185,7 +205,7 @@ export function getRelayUrl(): string {
   return (
     process.env['CONDUIT_RELAY_URL'] ??
     loadGlobalConfig().relayUrl ??
-    'wss://relay.conduitrelay.com'
+    DEFAULT_RELAY_WS_URL
   )
 }
 
@@ -197,7 +217,7 @@ export function getDashboardUrl(): string {
   return (
     process.env['CONDUIT_DASHBOARD_URL'] ??
     loadGlobalConfig().dashboardUrl ??
-    'https://app.conduitrelay.com'
+    DEFAULT_DASHBOARD_URL
   )
 }
 

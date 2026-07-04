@@ -1,9 +1,7 @@
 import * as jsondiffpatch from 'jsondiffpatch'
 import { ConduitClient } from '../ws/client.js'
-import { loadProjectConfig } from '../config.js'
+import { loadProjectConfig, DEFAULT_RELAY_WS_URL } from '../config.js'
 import type { RequestRecords, RequestRecord } from '@conduit/types'
-
-const DEFAULT_RELAY = 'wss://relay.conduitrelay.com'
 
 function formatDelta(delta: jsondiffpatch.Delta, path = '', indent = 0): void {
   if (delta === null || delta === undefined) return
@@ -39,7 +37,7 @@ export async function cmdDiff(
   id2: string,
   args: { relay?: string }
 ) {
-  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY
+  const relayUrl = args.relay ?? process.env['CONDUIT_RELAY_URL'] ?? DEFAULT_RELAY_WS_URL
   const cwd = process.cwd()
 
   let slug = 'watcher'
