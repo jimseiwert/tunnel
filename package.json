@@ -7,6 +7,7 @@
     "apps/dashboard"
   ],
   "scripts": {
+    "preinstall": "node scripts/require-bun.mjs",
     "build": "bun run build:types && bun run build:relay && bun run build:cli",
     "build:types": "cd packages/types && bun run build",
     "build:relay": "cd packages/relay && bun run build",
