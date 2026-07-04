@@ -20,7 +20,7 @@ No CLI required. The extension connects and proxies traffic on its own.
 
 **Watch mode.** If the Conduit CLI is already running as the owner, the extension switches to watcher mode and shows live traffic without forwarding anything. Your whole team can watch the same request stream simultaneously.
 
-**Auto-connect.** The extension connects automatically when VS Code opens a workspace. On first run it registers a unique slug for the workspace and saves it for future sessions.
+**Manual or automatic connection.** Open the Conduit panel from the Activity Bar to connect. Enable `"conduit.autoConnect": true` in settings if you want it to connect automatically when you open a workspace. On first connect it registers a unique slug for the workspace and saves it for future sessions.
 
 ## Requirements
 
@@ -33,9 +33,10 @@ You need a Conduit relay to connect to. Options:
 
 1. Install this extension
 2. Open any workspace in VS Code
-3. The extension auto-connects and generates a unique webhook URL for the workspace
-4. Your webhook URL appears in a VS Code notification — copy it and send requests to it
-5. Requests appear in the Conduit panel in the activity bar instantly
+3. Open the Conduit panel from the Activity Bar
+4. Click "Connect" to register the workspace and generate a webhook URL
+5. Your webhook URL appears in a VS Code notification — copy it and send requests to it
+6. Requests appear in the Conduit panel in the activity bar instantly
 
 That's it. No CLI, no config files, no tokens to manage manually.
 
@@ -80,7 +81,7 @@ If the CLI is already running as owner for your workspace, the extension detects
 | `conduit.mode` | `proxy` | `proxy`: extension forwards relay traffic to your local server. `watch`: extension observes traffic from an existing owner. |
 | `conduit.localPort` | `3000` | Local port to forward incoming requests to (proxy mode only) |
 | `conduit.relayUrl` | `wss://relay.conduitrelay.com` | WebSocket URL of your relay server |
-| `conduit.autoConnect` | `true` | Auto-connect when VS Code opens a workspace |
+| `conduit.autoConnect` | `false` | Auto-connect when VS Code opens a workspace |
 
 ## How slugs and tokens work
 
