@@ -18,5 +18,6 @@ describe('parseHeadersJson', () => {
     expect(parseHeadersJson('"a string"')).toEqual({})
     expect(parseHeadersJson('42')).toEqual({})
     expect(parseHeadersJson('null')).toEqual({})
+    expect(parseHeadersJson('[1,2,3]')).toEqual({})
   })
 })
