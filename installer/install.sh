@@ -40,7 +40,8 @@ curl -fsSL -o "/tmp/${BINARY}" "$URL"
 
 # Verify SHA256 against the published SHA256SUMS
 echo "Verifying checksum..."
-EXPECTED=$(curl -fsSL "$SUMS_URL" | grep " ${BINARY}-${PLATFORM}$" | awk '{print $1}')
+SUMS=$(curl -fsSL "$SUMS_URL" || true)
+EXPECTED=$(printf '%s\n' "$SUMS" | grep " ${BINARY}-${PLATFORM}$" | awk '{print $1}' || true)
 if [ -z "$EXPECTED" ]; then
   echo "Could not find a checksum for ${BINARY}-${PLATFORM} in SHA256SUMS" >&2
   exit 1
