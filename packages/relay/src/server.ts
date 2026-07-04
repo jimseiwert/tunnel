@@ -23,7 +23,7 @@ export async function createServer(
   await app.register(fastifyWebsocket)
 
   const registry = new ConnectionRegistry()
-  const pending = new PendingRequests()
+  const pending = new PendingRequests(config.maxBodyBytes)
 
   // Redirect /<slug> (no trailing slash, not a WS upgrade) → /<slug>/
   // Needed because the WS parametric route /:slug wins over the HTTP /:slug/*
