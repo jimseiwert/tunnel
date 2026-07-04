@@ -12,6 +12,10 @@ import { decodeStreamFrame, STREAM_FRAME_TYPE, encodeStreamFrame } from '@condui
 import { loadProjectConfig, saveProjectConfig } from '../config.js'
 import { forwardRequest } from './forwarder.js'
 
+export function relayUnreachableMessage(relayUrl: string): string {
+  return `Cannot reach the relay at ${relayUrl}. Check that it is running and that CONDUIT_RELAY_URL is correct.`
+}
+
 export interface ClientEvents {
   onConnected(slug: string, token: string, url: string): void
   onRequest(req: IncomingRequest): void
@@ -32,6 +36,7 @@ export class ConduitClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectDelay = 1000
   private closed = false
+  private everConnected = false
   private currentToken: string | null
 
   constructor(
@@ -158,13 +163,19 @@ export class ConduitClient {
     })
 
     ws.on('error', () => {
-      // Error event always precedes close; let close handle reconnect
+      // The 'close' handler drives reconnect. On the very first failed
+      // connection (before we ever registered), surface an actionable reason
+      // so the user isn't left with a silent "Disconnected".
+      if (!this.everConnected) {
+        this.events.onError('CONNECTION', relayUnreachableMessage(this.relayUrl))
+      }
     })
   }
 
   private _handleMessage(msg: RelayOutbound): void {
     switch (msg.type) {
       case 'registered': {
+        this.everConnected = true
         this.currentToken = msg.token
         // Persist updated token to home config
         if (this.config.cwd) {

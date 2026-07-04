@@ -74,7 +74,7 @@ export async function forwardRequest(
       const error = err as NodeJS.ErrnoException
 
       if (error.name === 'AbortError') {
-        return buildErrorResponse(requestId, 504, {}, durationMs)
+        return buildErrorResponse(requestId, 504, {}, durationMs, 'Conduit: your local server did not respond in time (timeout).')
       }
 
       // ECONNREFUSED or similar
@@ -84,11 +84,11 @@ export async function forwardRequest(
         'code' in error.cause &&
         (error.cause as NodeJS.ErrnoException).code === 'ECONNREFUSED'
       ) {
-        return buildErrorResponse(requestId, 502, {}, 0)
+        return buildErrorResponse(requestId, 502, {}, 0, `Conduit: cannot reach your local server at ${url}. Is it running?`)
       }
 
       // Generic connection error → 502
-      return buildErrorResponse(requestId, 502, {}, durationMs)
+      return buildErrorResponse(requestId, 502, {}, durationMs, `Conduit: failed to reach your local server at ${url}.`)
     }
 
     clearTimeout(timeoutId)
@@ -172,14 +172,16 @@ function buildErrorResponse(
   status: number,
   headers: Record<string, string>,
   durationMs: number,
+  message?: string,
 ): ForwardResponse {
+  const hasBody = typeof message === 'string' && message.length > 0
   return {
     type: 'response',
     requestId,
     status,
-    headers,
-    body: null,
-    bodyEncoding: 'utf8',
+    headers: hasBody ? { ...headers, 'content-type': 'text/plain; charset=utf-8' } : headers,
+    body: hasBody ? Buffer.from(message, 'utf8').toString('base64') : null,
+    bodyEncoding: hasBody ? 'base64' : 'utf8',
     bodyTruncated: false,
     durationMs,
   }
