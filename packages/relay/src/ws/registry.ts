@@ -57,9 +57,12 @@ export class ConnectionRegistry {
     }
 
     conn.gracePeriodTimer = setTimeout(() => {
-      // Grace period expired — slot is fully released
-      if (conn.gracePeriodTimer) {
-        conn.gracePeriodTimer = undefined
+      // Grace period expired — slot is fully released.
+      conn.gracePeriodTimer = undefined
+      // Prune the entry entirely if nothing else references this slug, so the
+      // connections map does not grow without bound under high slug churn.
+      if (conn.owner === null && conn.watchers.size === 0) {
+        this.connections.delete(slug)
       }
     }, GRACE_PERIOD_MS)
   }
@@ -90,6 +93,11 @@ export class ConnectionRegistry {
    */
   hasOwner(slug: string): boolean {
     return this.connections.get(slug)?.owner != null
+  }
+
+  /** True while an internal entry exists for the slug (owner, watchers, or grace timer). */
+  hasConnection(slug: string): boolean {
+    return this.connections.has(slug)
   }
 
   /**
